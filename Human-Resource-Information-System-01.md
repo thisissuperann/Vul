@@ -1,3 +1,4 @@
+#### BUG_AUTHOR:LIU WEIYU
 ## Human Resource Information System - SQL Injection on (initialize/login_process.php hr_email/hr_password parameter) 
 ### Vendor Homepage:
 https://www.sourcecodester.com/php/14714/human-resource-information-using-phpmysqliobject-orientedcomplete-free-sourcecode.html 
